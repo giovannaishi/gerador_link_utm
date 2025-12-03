@@ -148,7 +148,7 @@ if st.button("🔄 Processar Tudo", type="primary"):
     # -----------------------------------------------------------
     # 1. LINK BASE (Gera estritamente 1 para cada base selecionada)
     # -----------------------------------------------------------
-s    if gerar_base_link:
+    if gerar_base_link:
         for base in bases_selecionadas:
             novos_params = params.copy()
             novos_params['utm_campaign'] = [f"{campanha_atual}{base}"]
