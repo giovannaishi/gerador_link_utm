@@ -27,11 +27,11 @@ st.markdown("---")
 # 1. INPUT DO LINK
 # ==================================================
 st.header("1. Link Master")
-st.caption("Cole o link parametrizado (sem o nome da base e SEM HIPERLINK).")
+st.caption("Pode colar o link parametrizado sem o nome da base e SEM HIPERLINK.")
 
 url_input = st.text_input(
     "URL:",
-    placeholder="https://conquer.plus/?utm_source=...&utm_content=-30092025"
+    placeholder="https://conquer.plus/?utm_source=...&utm_content=botao_1-30092025"
 )
 
 if not url_input:
@@ -39,7 +39,7 @@ if not url_input:
     st.stop()
 
 # ==================================================
-# 🚨 VALIDAÇÃO
+# 🚨 VALIDAÇÃO E LIMPEZA AUTOMÁTICA
 # ==================================================
 if " " in url_input:
     st.error("⛔ **ERRO:** O link contém espaços. Remova-os.")
@@ -54,21 +54,30 @@ try:
     params = urllib.parse.parse_qs(parsed.query)
     
     campanha_atual = params.get('utm_campaign', [''])[0]
-    content_atual = params.get('utm_content', [''])[0]
+    content_original = params.get('utm_content', [''])[0]
     
     if not campanha_atual:
         st.error("⛔ **ERRO:** Faltou 'utm_campaign'.")
         st.stop()
 
-    if not content_atual:
+    if not content_original:
         st.error("⛔ **ERRO:** Faltou 'utm_content'.")
         st.stop()
 
-    padrao_proibido = r'(botao|imagem|hiperlink)[-_]?\d+'
-    encontrado = re.search(padrao_proibido, content_atual, re.IGNORECASE)
+    # --- LÓGICA DE LIMPEZA ---
+    # Regex para encontrar: botao_1, imagem-10, hiperlink_5, etc no começo da string
+    padrao_sujo = r'^(botao|img|hiperlink)[-_]?\d+'
     
-    if encontrado:
-        st.warning(f"⚠️ **Atenção:** O link já contém '{encontrado.group()}'. O gerador vai funcionar, mas verifique se não ficará duplicado.")
+    match_sujo = re.search(padrao_sujo, content_original, re.IGNORECASE)
+    
+    content_atual = content_original # Começa igual
+    
+    if match_sujo:
+        # Remove o trecho sujo (ex: remove 'botao_1')
+        lixo = match_sujo.group()
+        content_atual = re.sub(padrao_sujo, '', content_original, count=1)
+        
+        st.warning(f"🧹 **Limpeza Automática:** Detectamos **'{lixo}'**. O link foi limpo para usar apenas o sufixo: **'{content_atual}'**.")
     else:
         st.success("✅Configurações liberadas.")
 
@@ -106,24 +115,24 @@ with col_formatos:
     st.subheader("🅱️ Formatos e Quantidade")
     
     st.markdown("**Tipos de Link:**")
-    gerar_base_link = st.checkbox("Link Base", value=True, help="Gera 1 link original para cada base selecionada (sem contador).")
+    gerar_base_link = st.checkbox("Link Base (Limpo)", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
     gerar_botoes = st.checkbox("Botões", value=True, help="Gera botao_1, botao_2...")
     gerar_imagens = st.checkbox("Imagens", value=False)
     gerar_hiperlinks = st.checkbox("Hiperlinks", value=False)
     
     st.markdown("---")
     
-    # AQUI VOLTA A QUANTIDADE QUE VOCÊ PEDIU
+    # LÓGICA DA QUANTIDADE (MANTIDA)
     qtd_variacoes = st.number_input("Quantidade Total de Links (para Botões/Imagens):", min_value=1, max_value=200, value=40)
     
-    st.info(f"ℹ️ **Como vai funcionar:**\n"
+    st.info(f"ℹ️ **Lógica de Distribuição:**\n"
             f"Se você pedir **{qtd_variacoes} botões** e tiver **{len(bases_selecionadas) if bases_selecionadas else 0} bases**:\n"
-            f"O sistema vai distribuir as bases sequencialmente nos {qtd_variacoes} links (Base 1 -> Botão 1, Base 2 -> Botão 2... etc).")
+            f"O sistema distribui as bases sequencialmente nos links (Base 1 -> Botão 1, Base 2 -> Botão 2... Base 1 -> Botão 19).")
 
 st.markdown("---")
 
 # ==================================================
-# 3. PROCESSAMENTO (LÓGICA CÍCLICA)
+# 3. PROCESSAMENTO (COM O CONTENT LIMPO)
 # ==================================================
 st.header("3. Resultado")
 
@@ -139,11 +148,11 @@ if st.button("🔄 Processar Tudo", type="primary"):
     # -----------------------------------------------------------
     # 1. LINK BASE (Gera estritamente 1 para cada base selecionada)
     # -----------------------------------------------------------
-    if gerar_base_link:
+s    if gerar_base_link:
         for base in bases_selecionadas:
             novos_params = params.copy()
             novos_params['utm_campaign'] = [f"{campanha_atual}{base}"]
-            novos_params['utm_content'] = [content_atual] # Conteúdo limpo original
+            novos_params['utm_content'] = [content_atual] # Usa o content JÁ LIMPO
             
             nova_query = urllib.parse.urlencode(novos_params, doseq=True)
             link_final = urllib.parse.urlunparse(parsed._replace(query=nova_query))
@@ -169,17 +178,16 @@ if st.button("🔄 Processar Tudo", type="primary"):
             # Loop da Quantidade Solicitada (ex: 1 até 40)
             for i in range(1, qtd_variacoes + 1):
                 
-                # LÓGICA MÁGICA: Pega a base correspondente ciclicamente
-                # Se i=1, pega base 0. Se i=18, pega base 17. Se i=19, volta para base 0.
+                # LÓGICA MÁGICA (Cíclica)
                 indice_base = (i - 1) % total_bases
                 base_da_vez = bases_selecionadas[indice_base]
                 
                 novos_params = params.copy()
                 
-                # Monta Campanha com a Base da vez
+                # Monta Campanha
                 novos_params['utm_campaign'] = [f"{campanha_atual}{base_da_vez}"]
                 
-                # Monta Content Numerado
+                # Monta Content Numerado (Usando o content LIMPO)
                 nome_formatado = f"{tipo}_{i}"
                 if content_atual.startswith('-') or content_atual == '':
                     novo_content = f"{nome_formatado}{content_atual}"
@@ -204,7 +212,6 @@ if st.button("🔄 Processar Tudo", type="primary"):
         df = pd.DataFrame(resultados)
         st.success(f"✅ Processo concluído! {len(df)} links gerados.")
         
-        # Reordenando colunas para facilitar leitura
         cols = ["Tipo", "Identificador", "Base", "Link Final"]
         st.dataframe(df[cols], use_container_width=True)
         
