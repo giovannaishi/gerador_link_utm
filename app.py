@@ -115,7 +115,7 @@ with col_formatos:
     st.subheader("🅱️ Formatos e Quantidade")
     
     st.markdown("**Tipos de Link:**")
-    gerar_base_link = st.checkbox("Link Base (Limpo)", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
+    gerar_base_link = st.checkbox("Link Base", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
     gerar_botoes = st.checkbox("Botões", value=True, help="Gera botao_1, botao_2...")
     gerar_imagens = st.checkbox("Imagens", value=False)
     gerar_hiperlinks = st.checkbox("Hiperlinks", value=False)
@@ -221,3 +221,4 @@ if st.button("🔄 Processar Tudo", type="primary"):
         st.download_button("📥 Baixar Planilha (.csv)", data=csv, file_name=nome, mime="text/csv")
     else:
         st.warning("⚠️ Nenhuma opção selecionada.")
+
