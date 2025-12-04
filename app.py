@@ -8,9 +8,9 @@ from io import BytesIO
 # ==================================================
 # CONFIGURAÇÃO INICIAL
 # ==================================================
-st.set_page_config(page_title="Gerador de Links Parametrizados", layout="wide")
+st.set_page_config(page_title="Derivador de Parametrizações", layout="wide")
 
-# Lista Oficial de Bases
+# Lista Oficial de Bases (Ordenada)
 BASES_OFICIAIS = [
     "_base_bootcamp_ia",
     "_base_c04_minicurso_master",
@@ -42,13 +42,27 @@ BASES_OFICIAIS = [
 ]
 BASES_OFICIAIS.sort()
 
-st.title("🚀 Gerador de Links Parametrizados")
+# ==================================================
+# CABEÇALHO 
+# ==================================================
+# vertical_alignment="center" garante que a imagem e o texto fiquem na mesma linha visual
+col_logo, col_titulo = st.columns([1, 5], vertical_alignment="center")
+
+with col_logo:
+    try:
+        # use_container_width ajusta a imagem ao tamanho da coluna (responsivo)
+        st.image("[wiser] logo•branco.png", use_container_width=True)
+    except:
+        st.write("") # Fica vazio se não achar o logo
+
+with col_titulo:
+    st.title("Derivador de Parametrizações")
+
 st.markdown("---")
 
 # ==================================================
 # 1. INPUT DO LINK
 # ==================================================
-# st.header("1. Link Master")
 st.subheader("Cole o link parametrizado inicial aqui:")
 
 url_input = st.text_input(
@@ -62,7 +76,7 @@ if not url_input:
     st.stop()
 
 # ==================================================
-#  VALIDAÇÃO, SEGURANÇA E PREPARAÇÃO
+# 🚨 VALIDAÇÃO, SEGURANÇA E PREPARAÇÃO
 # ==================================================
 if " " in url_input:
     st.error("⛔ **ERRO:** O link contém espaços em branco. Remova-os.")
@@ -108,7 +122,7 @@ try:
     if match_sufixo:
         content_sufixo = match_sufixo.group()
 
-    # Feedback 
+    # Feedback discreto
     if base_removida:
         st.caption(f"✅ Base antiga removida. Usando campanha base: **{campanha_limpa}**")
     else:
@@ -121,7 +135,7 @@ except Exception as e:
 st.markdown("---")
 
 # ==================================================
-# 2. CONFIGURAÇÃO 
+# 2. CONFIGURAÇÃO
 # ==================================================
 col_bases, col_formatos = st.columns(2)
 bases_selecionadas = []
@@ -248,7 +262,3 @@ if st.button("🔄 Processar Tudo", type="primary", use_container_width=True):
         st.download_button("📥 Baixar Planilha (.csv)", data=csv, file_name=nome, mime="text/csv")
     else:
         st.warning("⚠️ Nenhuma opção selecionada.")
-
-
-
-
