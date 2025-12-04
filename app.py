@@ -165,7 +165,7 @@ with col_formatos:
         if gerar_imagens: links_por_base += qtd_variacoes
         if gerar_hiperlinks: links_por_base += qtd_variacoes
         total_estimado = len(bases_selecionadas) * links_por_base
-    st.info(f"ℹ️ **Modo Multiplicação:** Se você selecionou **{len(bases_selecionadas)} bases** e **{qtd_variacoes} variações**, o sistema gerará **{total_estimado} links** no total.")
+    st.info(f"ℹ️ **Regra:** Se você selecionou **{len(bases_selecionadas)} bases** e **{qtd_variacoes} variações**, o sistema gerará **{total_estimado} links** no total.")
 
 st.markdown("---")
 
@@ -248,6 +248,7 @@ if st.button("🔄 Processar Tudo", type="primary", use_container_width=True):
         st.download_button("📥 Baixar Planilha (.csv)", data=csv, file_name=nome, mime="text/csv")
     else:
         st.warning("⚠️ Nenhuma opção selecionada.")
+
 
 
 
