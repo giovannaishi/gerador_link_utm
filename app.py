@@ -8,9 +8,9 @@ from io import BytesIO
 # ==================================================
 # CONFIGURAÇÃO INICIAL
 # ==================================================
-st.set_page_config(page_title="Gerador de Links Growth", layout="wide")
+st.set_page_config(page_title="Gerador de Links Parametrizados", layout="wide")
 
-# Lista Oficial de Bases (Ordenada)
+# Lista Oficial de Bases
 BASES_OFICIAIS = [
     "_base_bootcamp_ia",
     "_base_c04_minicurso_master",
@@ -48,7 +48,7 @@ st.markdown("---")
 # ==================================================
 # 1. INPUT DO LINK
 # ==================================================
-# st.header("1. Link Master") # Removi o header para ficar mais limpo como no print
+# st.header("1. Link Master")
 st.subheader("Cole o link parametrizado inicial aqui:")
 
 url_input = st.text_input(
@@ -62,7 +62,7 @@ if not url_input:
     st.stop()
 
 # ==================================================
-# 🚨 VALIDAÇÃO, SEGURANÇA E PREPARAÇÃO
+#  VALIDAÇÃO, SEGURANÇA E PREPARAÇÃO
 # ==================================================
 if " " in url_input:
     st.error("⛔ **ERRO:** O link contém espaços em branco. Remova-os.")
@@ -108,7 +108,7 @@ try:
     if match_sufixo:
         content_sufixo = match_sufixo.group()
 
-    # Feedback discreto
+    # Feedback 
     if base_removida:
         st.caption(f"✅ Base antiga removida. Usando campanha base: **{campanha_limpa}**")
     else:
@@ -121,7 +121,7 @@ except Exception as e:
 st.markdown("---")
 
 # ==================================================
-# 2. CONFIGURAÇÃO (LAYOUT IDÊNTICO À IMAGEM)
+# 2. CONFIGURAÇÃO 
 # ==================================================
 col_bases, col_formatos = st.columns(2)
 bases_selecionadas = []
@@ -183,7 +183,7 @@ if st.button("🔄 Processar Tudo", type="primary", use_container_width=True):
     # Itera sobre cada Base Selecionada
     for base in bases_selecionadas:
         
-        # A) LINK BASE (Preserva Original)
+        # A) LINK BASE 
         if gerar_base_link:
             novos_params = params.copy()
             novos_params['utm_campaign'] = [f"{campanha_limpa}{base}"]
@@ -247,4 +247,5 @@ if st.button("🔄 Processar Tudo", type="primary", use_container_width=True):
         st.download_button("📥 Baixar Planilha (.csv)", data=csv, file_name=nome, mime="text/csv")
     else:
         st.warning("⚠️ Nenhuma opção selecionada.")
+
 
