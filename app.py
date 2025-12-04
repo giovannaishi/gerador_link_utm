@@ -48,11 +48,12 @@ st.markdown("---")
 # ==================================================
 # 1. INPUT DO LINK
 # ==================================================
-st.header("1. Link Master")
-st.caption("Cole o link parametrizado.")
+# st.header("1. Link Master") # Removi o header para ficar mais limpo como no print
+st.subheader("Cole o link parametrizado inicial aqui:")
 
 url_input = st.text_input(
     "URL:",
+    label_visibility="collapsed",
     placeholder="https://conquer.plus/?utm_campaign=...&utm_content=botao_1-30092025"
 )
 
@@ -61,7 +62,7 @@ if not url_input:
     st.stop()
 
 # ==================================================
-# 🚨 VALIDAÇÃO, SEGURANÇA E LIMPEZA
+# 🚨 VALIDAÇÃO, SEGURANÇA E PREPARAÇÃO
 # ==================================================
 if " " in url_input:
     st.error("⛔ **ERRO:** O link contém espaços em branco. Remova-os.")
@@ -86,49 +87,32 @@ try:
         st.error("⛔ **ERRO:** Faltou 'utm_content'.")
         st.stop()
 
-    # --- 1. VALIDAÇÃO DE SEGURANÇA ---
+    # 1. Validação de Caracteres
     if re.search(r'[^a-zA-Z0-9\-_=]', content_original):
         st.error("⛔ **ERRO DE FORMATO:** O parâmetro 'utm_content' contém caracteres inválidos.")
-        st.warning("💡 **Permitido apenas:** Letras (a-z), Números (0-9), Hífen (-), Underline (_) e Igual (=).")
         st.stop() 
 
-    # --- 2. LIMPEZA DE BASE (utm_campaign) ---
-    # Remove qualquer coisa do final que comece com "_base"
-    campanha_atual = campanha_original
+    # 2. Limpeza da Base (utm_campaign)
+    campanha_limpa = campanha_original
     base_removida = None
-    
     padrao_base = r'(_base.*)$'
     match_base = re.search(padrao_base, campanha_original, re.IGNORECASE)
     
     if match_base:
         base_removida = match_base.group()
-        campanha_atual = re.sub(padrao_base, '', campanha_original, count=1, flags=re.IGNORECASE)
+        campanha_limpa = re.sub(padrao_base, '', campanha_original, count=1, flags=re.IGNORECASE)
 
-    # --- 3. LIMPEZA DE CONTENT (utm_content) ---
-    # REGRA: Manter apenas o sufixo numérico (com ou sem hifen) do final.
-    content_atual = content_original
-    prefixo_removido = None
-    
+    # 3. Preparação do Sufixo (para Botões/Imagens novos)
+    content_sufixo = content_original
     match_sufixo = re.search(r'([-]?\d+)$', content_original)
-    
     if match_sufixo:
-        sufixo_encontrado = match_sufixo.group()
-        if content_original != sufixo_encontrado:
-            prefixo_removido = content_original.replace(sufixo_encontrado, "")
-            content_atual = sufixo_encontrado
+        content_sufixo = match_sufixo.group()
 
-    # --- FEEDBACK DE LIMPEZA ---
-    if base_removida or prefixo_removido:
-        msg = "🧹 **Limpeza Automática Realizada:**"
-        if base_removida:
-            msg += f"\n- Base antiga removida: **'{base_removida}'**"
-        if prefixo_removido:
-            msg += f"\n- Prefixo removido do content: **'{prefixo_removido}'**"
-        st.warning(msg)
+    # Feedback discreto
+    if base_removida:
+        st.caption(f"✅ Base antiga removida. Usando campanha base: **{campanha_limpa}**")
     else:
-        st.success("✅ Configurações liberadas!")
-    
-    st.caption(f"🔧 **Usaremos a** Campanha: `{campanha_atual}` | Sufixo: `{content_atual}`")
+        st.caption("✅ Configurações liberadas.")
 
 except Exception as e:
     st.error(f"⛔ Erro ao ler link: {e}")
@@ -137,16 +121,14 @@ except Exception as e:
 st.markdown("---")
 
 # ==================================================
-# 2. CONFIGURAÇÃO
+# 2. CONFIGURAÇÃO (LAYOUT IDÊNTICO À IMAGEM)
 # ==================================================
-st.header("2. O que vamos gerar?")
-
 col_bases, col_formatos = st.columns(2)
 bases_selecionadas = []
 
 # --- COLUNA 1: BASES ---
 with col_bases:
-    st.subheader("🅰️ Bases")
+    st.header("🅰️ Bases")
     usar_todas = st.checkbox("Selecionar todas as bases oficiais", value=True)
     
     if usar_todas:
@@ -159,45 +141,55 @@ with col_bases:
 
 # --- COLUNA 2: FORMATOS ---
 with col_formatos:
-    st.subheader("🅱️ Formatos e Quantidade")
+    st.header("🅱️ Formatos e Quantidade")
     
     st.markdown("**Selecione as variações:**")
-    gerar_base_link = st.checkbox("Link Base", value=True, help="Gera link com apenas o sufixo (sem botao/imagem/hiperlink).")
-    gerar_botoes = st.checkbox("Botões", value=True, help="Adiciona prefixo botao_X")
-    gerar_imagens = st.checkbox("Imagens", value=False, help="Adiciona prefixo img_X")
-    gerar_hiperlinks = st.checkbox("Hiperlinks", value=False, help="Adiciona prefixo hiperlink_X")
+    
+    # Checkboxes com tooltips (?)
+    gerar_base_link = st.checkbox("Link Base", value=True, help="Mantém o conteúdo original e apenas troca a base.")
+    gerar_botoes = st.checkbox("Botões", value=True, help="Gera novos botões sequenciais (botao_1...)")
+    gerar_imagens = st.checkbox("Imagens", value=False, help="Gera novas imagens sequenciais (img_1...)")
+    gerar_hiperlinks = st.checkbox("Hiperlinks", value=False, help="Gera novos hiperlinks sequenciais (hiperlink_1...)")
     
     st.markdown("---")
     
-    qtd_variacoes = st.number_input("Quantidade de Variações POR BASE:", min_value=1, max_value=100, value=40)
+    st.markdown("**Quantidade de Variações POR BASE:**")
+    qtd_variacoes = st.number_input("Qtd", min_value=1, max_value=200, value=40, label_visibility="collapsed")
     
-    # Texto explicativo atualizado
-    total_estimado = len(bases_selecionadas) * qtd_variacoes if bases_selecionadas else 0
-    st.info(f"ℹ️ **Modo Multiplicação:** Se você selecionou **{len(bases_selecionadas)} bases** e **{qtd_variacoes} variações**, o sistema gerará **{total_estimado} links** de botões/imagens (mais os links base).")
+    # Cálculo para o Box Azul
+    total_estimado = 0
+    if bases_selecionadas:
+        links_por_base = 0
+        if gerar_base_link: links_por_base += 1
+        if gerar_botoes: links_por_base += qtd_variacoes
+        if gerar_imagens: links_por_base += qtd_variacoes
+        if gerar_hiperlinks: links_por_base += qtd_variacoes
+        total_estimado = len(bases_selecionadas) * links_por_base
+
+    st.info(f"ℹ️ **Modo Multiplicação:** Se você selecionou **{len(bases_selecionadas)} bases** e **{qtd_variacoes} variações**, o sistema gerará **{total_estimado} links** no total.")
 
 st.markdown("---")
 
 # ==================================================
 # 3. PROCESSAMENTO
 # ==================================================
-st.header("3. Resultado")
-
-if st.button("🔄 Processar Tudo", type="primary"):
+# Botão grande
+if st.button("🔄 Processar Tudo", type="primary", use_container_width=True):
     
     if not bases_selecionadas:
-        st.error("⚠️ Você precisa selecionar pelo menos uma base.")
+        st.error("⚠️ Selecione pelo menos uma base.")
         st.stop()
 
     resultados = []
     
-    # ITERA SOBRE AS BASES (NÍVEL SUPERIOR)
+    # Itera sobre cada Base Selecionada
     for base in bases_selecionadas:
         
-        # 1. LINK BASE (1 por base)
+        # A) LINK BASE (Preserva Original)
         if gerar_base_link:
             novos_params = params.copy()
-            novos_params['utm_campaign'] = [f"{campanha_atual}{base}"]
-            novos_params['utm_content'] = [content_atual] 
+            novos_params['utm_campaign'] = [f"{campanha_limpa}{base}"]
+            novos_params['utm_content'] = [content_original] # Intacto
             
             nova_query = urllib.parse.urlencode(novos_params, doseq=True)
             link_final = urllib.parse.urlunparse(parsed._replace(query=nova_query))
@@ -210,7 +202,7 @@ if st.button("🔄 Processar Tudo", type="primary"):
                 "Link Final": link_final
             })
 
-        # 2. VARIAÇÕES (Multiplica Qtd x Base)
+        # B) VARIAÇÕES (Gera Novos usando Sufixo)
         tipos_ativos = []
         if gerar_botoes: tipos_ativos.append("botao")
         if gerar_imagens: tipos_ativos.append("img")
@@ -218,21 +210,17 @@ if st.button("🔄 Processar Tudo", type="primary"):
 
         if tipos_ativos:
             for tipo in tipos_ativos:
-                # Gera de 1 até a Quantidade solicitada PARA ESTA BASE
                 for i in range(1, qtd_variacoes + 1):
                     
                     novos_params = params.copy()
+                    novos_params['utm_campaign'] = [f"{campanha_limpa}{base}"]
                     
-                    # Campanha + Base Atual
-                    novos_params['utm_campaign'] = [f"{campanha_atual}{base}"]
-                    
-                    # Content + Prefixo + Sufixo
                     nome_formatado = f"{tipo}_{i}"
                     
-                    if content_atual.startswith('-') or content_atual == '':
-                        novo_content = f"{nome_formatado}{content_atual}"
+                    if content_sufixo.startswith('-') or content_sufixo == '':
+                        novo_content = f"{nome_formatado}{content_sufixo}"
                     else:
-                        novo_content = f"{nome_formatado}-{content_atual}"
+                        novo_content = f"{nome_formatado}-{content_sufixo}"
                     
                     novos_params['utm_content'] = [novo_content]
                     
@@ -250,7 +238,7 @@ if st.button("🔄 Processar Tudo", type="primary"):
     # EXIBIÇÃO
     if resultados:
         df = pd.DataFrame(resultados)
-        st.success(f"✅ Processo concluído! {len(df)} links gerados.")
+        st.success(f"✅ Sucesso! {len(df)} links gerados.")
         
         cols = ["Tipo", "Identificador", "Base", "Link Final"]
         st.dataframe(df[cols], use_container_width=True)
