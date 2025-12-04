@@ -27,11 +27,11 @@ st.markdown("---")
 # 1. INPUT DO LINK
 # ==================================================
 st.header("1. Link Master")
-st.caption("Pode colar o link parametrizado sem o nome da base e SEM HIPERLINK.")
+st.caption("Cole o link parametrizado aqui")
 
 url_input = st.text_input(
     "URL:",
-    placeholder="https://conquer.plus/?utm_source=...&utm_content=botao_1-30092025"
+    placeholder="https://conquer.plus/?utm_campaign=...&utm_content=botao_1-3009"
 )
 
 if not url_input:
@@ -39,10 +39,11 @@ if not url_input:
     st.stop()
 
 # ==================================================
-# 🚨 VALIDAÇÃO E LIMPEZA AUTOMÁTICA
+# 🚨 VALIDAÇÃO, SEGURANÇA E LIMPEZA
 # ==================================================
+# 1. Validação Básica de URL
 if " " in url_input:
-    st.error("⛔ **ERRO:** O link contém espaços. Remova-os.")
+    st.error("⛔ **ERRO:** O link contém espaços em branco. Remova-os.")
     st.stop()
 
 if not url_input.startswith(("http://", "https://")):
@@ -53,10 +54,10 @@ try:
     parsed = urllib.parse.urlparse(url_input)
     params = urllib.parse.parse_qs(parsed.query)
     
-    campanha_atual = params.get('utm_campaign', [''])[0]
+    campanha_original = params.get('utm_campaign', [''])[0]
     content_original = params.get('utm_content', [''])[0]
     
-    if not campanha_atual:
+    if not campanha_original:
         st.error("⛔ **ERRO:** Faltou 'utm_campaign'.")
         st.stop()
 
@@ -64,22 +65,48 @@ try:
         st.error("⛔ **ERRO:** Faltou 'utm_content'.")
         st.stop()
 
-    # --- LÓGICA DE LIMPEZA ---
-    # Regex para encontrar: botao_1, imagem-10, hiperlink_5, etc no começo da string
-    padrao_sujo = r'^(botao|img|hiperlink)[-_]?\d+'
+    # --- NOVO: VALIDAÇÃO RÍGIDA DE CARACTERES ---
+    # Regex: Procura por qualquer caracter que NÃO seja letra, número, hifen, underline ou igual.
+    # Se encontrar, bloqueia.
+    if re.search(r'[^a-zA-Z0-9\-_=]', content_original):
+        st.error("⛔ **ERRO DE FORMATO:** O parâmetro 'utm_content' contém caracteres inválidos.")
+        st.warning("💡 **Permitido apenas:** Letras (a-z), Números (0-9), Hífen (-), Underline (_) e Igual (=).")
+        st.caption(f"Conteúdo encontrado: {content_original}")
+        st.stop() # Trava o script aqui
+
+    # --- 2. LIMPEZA DE BASE (utm_campaign) ---
+    campanha_atual = campanha_original
+    base_removida = None
     
+    for base in sorted(BASES_OFICIAIS, key=len, reverse=True):
+        if campanha_original.endswith(base):
+            campanha_atual = campanha_original.replace(base, "")
+            base_removida = base
+            break 
+
+    # --- 3. LIMPEZA DE FORMATO (utm_content) ---
+    padrao_sujo = r'^(botao|img|hiperlink)[-_]?\d+'
     match_sujo = re.search(padrao_sujo, content_original, re.IGNORECASE)
     
-    content_atual = content_original # Começa igual
+    content_atual = content_original
+    item_removido = None
     
     if match_sujo:
-        # Remove o trecho sujo (ex: remove 'botao_1')
-        lixo = match_sujo.group()
+        item_removido = match_sujo.group()
         content_atual = re.sub(padrao_sujo, '', content_original, count=1)
+
+    # --- FEEDBACK DE LIMPEZA ---
+    if base_removida or item_removido:
+        msg = "🧹 **Limpeza Automática Realizada:**"
+        if base_removida:
+            msg += f"\n- Base removida: **'{base_removida}'**"
+        if item_removido:
+            msg += f"\n- Formato removido: **'{item_removido}'**"
         
-        st.warning(f"🧹 **Limpeza Automática:** Detectamos **'{lixo}'**. O link foi limpo para usar apenas o sufixo: **'{content_atual}'**.")
+        st.warning(msg)
+        st.caption(f"Usaremos a campanha base: **{campanha_atual}** e o sufixo: **{content_atual}**")
     else:
-        st.success("✅Configurações liberadas.")
+        st.success("✅Configurações liberadas!")
 
 except Exception as e:
     st.error(f"⛔ Erro ao ler link: {e}")
@@ -115,15 +142,15 @@ with col_formatos:
     st.subheader("🅱️ Formatos e Quantidade")
     
     st.markdown("**Tipos de Link:**")
-    gerar_base_link = st.checkbox("Link Base", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
+    gerar_base_link = st.checkbox("Link Base (Limpo)", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
     gerar_botoes = st.checkbox("Botões", value=True, help="Gera botao_1, botao_2...")
     gerar_imagens = st.checkbox("Imagens", value=False)
     gerar_hiperlinks = st.checkbox("Hiperlinks", value=False)
     
     st.markdown("---")
     
-    # LÓGICA DA QUANTIDADE (MANTIDA)
-    qtd_variacoes = st.number_input("Quantidade Total de Links (para Botões/Imagens):", min_value=1, max_value=200, value=40)
+    # LÓGICA DA QUANTIDADE
+    qtd_variacoes = st.number_input("Quantidade Total de Links (para Botões/Imagens/hiperlinks):", min_value=1, max_value=200, value=40)
     
     st.info(f"ℹ️ **Lógica de Distribuição:**\n"
             f"Se você pedir **{qtd_variacoes} botões** e tiver **{len(bases_selecionadas) if bases_selecionadas else 0} bases**:\n"
@@ -132,7 +159,7 @@ with col_formatos:
 st.markdown("---")
 
 # ==================================================
-# 3. PROCESSAMENTO (COM O CONTENT LIMPO)
+# 3. PROCESSAMENTO (COM DADOS LIMPOS)
 # ==================================================
 st.header("3. Resultado")
 
@@ -151,8 +178,10 @@ if st.button("🔄 Processar Tudo", type="primary"):
     if gerar_base_link:
         for base in bases_selecionadas:
             novos_params = params.copy()
+            # Usa a campanha LIMPA + Base nova
             novos_params['utm_campaign'] = [f"{campanha_atual}{base}"]
-            novos_params['utm_content'] = [content_atual] # Usa o content JÁ LIMPO
+            # Usa o content LIMPO
+            novos_params['utm_content'] = [content_atual] 
             
             nova_query = urllib.parse.urlencode(novos_params, doseq=True)
             link_final = urllib.parse.urlunparse(parsed._replace(query=nova_query))
@@ -178,17 +207,18 @@ if st.button("🔄 Processar Tudo", type="primary"):
             # Loop da Quantidade Solicitada (ex: 1 até 40)
             for i in range(1, qtd_variacoes + 1):
                 
-                # LÓGICA MÁGICA (Cíclica)
+                # LÓGICA CÍCLICA
                 indice_base = (i - 1) % total_bases
                 base_da_vez = bases_selecionadas[indice_base]
                 
                 novos_params = params.copy()
                 
-                # Monta Campanha
+                # Monta Campanha (Limpa + Base da vez)
                 novos_params['utm_campaign'] = [f"{campanha_atual}{base_da_vez}"]
                 
-                # Monta Content Numerado (Usando o content LIMPO)
+                # Monta Content Numerado (Prefixo + Content Limpo)
                 nome_formatado = f"{tipo}_{i}"
+                
                 if content_atual.startswith('-') or content_atual == '':
                     novo_content = f"{nome_formatado}{content_atual}"
                 else:
@@ -221,4 +251,3 @@ if st.button("🔄 Processar Tudo", type="primary"):
         st.download_button("📥 Baixar Planilha (.csv)", data=csv, file_name=nome, mime="text/csv")
     else:
         st.warning("⚠️ Nenhuma opção selecionada.")
-
