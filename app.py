@@ -10,15 +10,39 @@ from io import BytesIO
 # ==================================================
 st.set_page_config(page_title="Gerador de Links Growth", layout="wide")
 
-# Lista Oficial de Bases
+# Lista Oficial de Bases (Atualizada)
 BASES_OFICIAIS = [
-    "_base_campanhas_antigas", "_base_produtividade_inteligente", "_base_estrategias_digitais",
-    "_base_liberacao_oratoria", "_base_intensivo_bia", "_base_gc_conquer_talks",
-    "_base_liberacao_sinal_plus", "_base_conquer_carreiras", "_base_gp_minicurso",
-    "_base_campanhas_varejo", "_base_lib_de_ia", "_base_liberacao_apresentacoes_que_conquistam",
-    "_base_liberacao_lideranca", "_base_inteligencia_emocional", "_base_liberacao_foco",
-    "_base_mba_neurociencia", "_base_liberacao_em_vendas", "_base_desengajadas"
+    "_base_campanhas_antigas", 
+    "_base_produtividade_inteligente", 
+    "_base_estrategias_digitais",
+    "_base_liberacao_oratoria", 
+    "_base_intensivo_bia", 
+    "_base_gc_conquer_talks",
+    "_base_liberacao_sinal_plus", 
+    "_base_conquer_carreiras", 
+    "_base_gp_minicurso",
+    "_base_campanhas_varejo", 
+    "_base_lib_de_ia", 
+    "_base_liberacao_apresentacoes_que_conquistam",
+    "_base_liberacao_lideranca", 
+    "_base_inteligencia_emocional", 
+    "_base_liberacao_foco",
+    "_base_mba_neurociencia", 
+    "_base_liberacao_em_vendas", 
+    "_base_desengajadas",
+    "_base_liberacao_carisma",
+    "_base_bootcamp_ia",
+    "_base_lab_lid",
+    "_base_liberacao_pos_de_iagel",
+    "_base_ongoing_unificada",
+    "_base_c04_minicurso_master",
+    "_base_c05_mother_reset",
+    "_base_oratoria",
+    "_base_lideranca"
 ]
+
+# Ordena a lista alfabeticamente para facilitar a busca visual no dropdown
+BASES_OFICIAIS.sort()
 
 st.title("🚀 Gerador de Links Parametrizados")
 st.markdown("---")
@@ -27,11 +51,11 @@ st.markdown("---")
 # 1. INPUT DO LINK
 # ==================================================
 st.header("1. Link Master")
-st.caption("Cole o link parametrizado aqui")
+st.caption("Cole o link parametrizado")
 
 url_input = st.text_input(
     "URL:",
-    placeholder="https://conquer.plus/?utm_campaign=...&utm_content=botao_1-3009"
+    placeholder="https://conquer.plus/?utm_campaign=minha_campanha_base_velha&utm_content=botao_1-3009"
 )
 
 if not url_input:
@@ -41,7 +65,6 @@ if not url_input:
 # ==================================================
 # 🚨 VALIDAÇÃO, SEGURANÇA E LIMPEZA
 # ==================================================
-# 1. Validação Básica de URL
 if " " in url_input:
     st.error("⛔ **ERRO:** O link contém espaços em branco. Remova-os.")
     st.stop()
@@ -65,41 +88,44 @@ try:
         st.error("⛔ **ERRO:** Faltou 'utm_content'.")
         st.stop()
 
-    # --- NOVO: VALIDAÇÃO RÍGIDA DE CARACTERES ---
-    # Regex: Procura por qualquer caracter que NÃO seja letra, número, hifen, underline ou igual.
-    # Se encontrar, bloqueia.
+    # --- 1. VALIDAÇÃO RÍGIDA DE CARACTERES ESPECIAIS (utm_content) ---
     if re.search(r'[^a-zA-Z0-9\-_=]', content_original):
         st.error("⛔ **ERRO DE FORMATO:** O parâmetro 'utm_content' contém caracteres inválidos.")
         st.warning("💡 **Permitido apenas:** Letras (a-z), Números (0-9), Hífen (-), Underline (_) e Igual (=).")
         st.caption(f"Conteúdo encontrado: {content_original}")
-        st.stop() # Trava o script aqui
+        st.stop() 
 
-    # --- 2. LIMPEZA DE BASE (utm_campaign) ---
+    # --- 2. LIMPEZA INTELIGENTE DE BASE (utm_campaign) ---
+    # Nova Regra: Remove qualquer coisa do final que comece com "_base"
+    # Regex: (_base.*)$ -> Pega "_base" e tudo que vier depois até o fim da string
+    
     campanha_atual = campanha_original
     base_removida = None
     
-    for base in sorted(BASES_OFICIAIS, key=len, reverse=True):
-        if campanha_original.endswith(base):
-            campanha_atual = campanha_original.replace(base, "")
-            base_removida = base
-            break 
+    padrao_base = r'(_base.*)$'
+    match_base = re.search(padrao_base, campanha_original, re.IGNORECASE)
+    
+    if match_base:
+        base_removida = match_base.group()
+        # Substitui o padrão encontrado por vazio (remove)
+        campanha_atual = re.sub(padrao_base, '', campanha_original, count=1, flags=re.IGNORECASE)
 
     # --- 3. LIMPEZA DE FORMATO (utm_content) ---
-    padrao_sujo = r'^(botao|img|hiperlink)[-_]?\d+'
-    match_sujo = re.search(padrao_sujo, content_original, re.IGNORECASE)
+    padrao_content = r'^(botao|img|hiperlink)[-_]?\d+'
+    match_content = re.search(padrao_content, content_original, re.IGNORECASE)
     
     content_atual = content_original
     item_removido = None
     
-    if match_sujo:
-        item_removido = match_sujo.group()
-        content_atual = re.sub(padrao_sujo, '', content_original, count=1)
+    if match_content:
+        item_removido = match_content.group()
+        content_atual = re.sub(padrao_content, '', content_original, count=1)
 
     # --- FEEDBACK DE LIMPEZA ---
     if base_removida or item_removido:
         msg = "🧹 **Limpeza Automática Realizada:**"
         if base_removida:
-            msg += f"\n- Base removida: **'{base_removida}'**"
+            msg += f"\n- Base antiga removida: **'{base_removida}'**"
         if item_removido:
             msg += f"\n- Formato removido: **'{item_removido}'**"
         
@@ -142,7 +168,7 @@ with col_formatos:
     st.subheader("🅱️ Formatos e Quantidade")
     
     st.markdown("**Tipos de Link:**")
-    gerar_base_link = st.checkbox("Link Base (Limpo)", value=True, help="Gera 1 link original (já limpo) para cada base selecionada.")
+    gerar_base_link = st.checkbox("Link Base", value=True, help="Gera 1 link para cada base selecionada.")
     gerar_botoes = st.checkbox("Botões", value=True, help="Gera botao_1, botao_2...")
     gerar_imagens = st.checkbox("Imagens", value=False)
     gerar_hiperlinks = st.checkbox("Hiperlinks", value=False)
@@ -150,7 +176,7 @@ with col_formatos:
     st.markdown("---")
     
     # LÓGICA DA QUANTIDADE
-    qtd_variacoes = st.number_input("Quantidade Total de Links (para Botões/Imagens/hiperlinks):", min_value=1, max_value=200, value=40)
+    qtd_variacoes = st.number_input("Quantidade Total de Links (para Botões/Imagens/Hiperlinks):", min_value=1, max_value=200, value=40)
     
     st.info(f"ℹ️ **Lógica de Distribuição:**\n"
             f"Se você pedir **{qtd_variacoes} botões** e tiver **{len(bases_selecionadas) if bases_selecionadas else 0} bases**:\n"
